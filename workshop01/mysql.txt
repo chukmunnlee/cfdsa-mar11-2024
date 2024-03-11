@@ -1,0 +1,23 @@
+# Create container with bind mount
+docker run -d -p 3306:3306 --name mysql \
+	-e MYSQL_ROOT_PASSWORD=abc123 \
+	--mount type=bind,src=/opt/tmp/dbdir,dst=/var/lib/mysql \
+	mysql:8.3
+
+# Create container with bind volume
+docker run -d -p 3306:3306 --name mysql \
+	-e MYSQL_ROOT_PASSWORD=abc123 \
+	--mount type=volume,src=data-vol,dst=/var/lib/mysql \
+	mysql:8.3
+
+# Run container in our own bridge network
+docker run -d -p 8080:3000 \
+	--name fortune \
+	--network mynet \
+	chukmunnlee/mar11-fortune:v1.0.1
+
+# Run a debugging container, delete it when we exit
+docker run -ti --rm \
+	--network mynet \
+	nicolaka/netshoot:v0.12 /bin/bash
+
