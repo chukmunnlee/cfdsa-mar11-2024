@@ -1,0 +1,18 @@
+---
+apiVersion: v1 
+kind: ConfigMap  
+metadata:
+  name: dov-cm
+  namespace: myns
+data:
+  INSTANCE_NAME: name from configmap
+
+---
+apiVersion: v1 
+kind: Secret  
+metadata:
+  name: dov-secret
+  namespace: myns
+type: Opaque
+data:
+  INSTANCE_NAME: bmFtZSBmcm9tIGNvbmZpZ21hcA==

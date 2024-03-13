@@ -1,0 +1,98 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: bggns
+
+---
+apiVersion: v1
+kind: ConfigMap 
+metadata: 
+  name: bgg-cm 
+  namespace: bggns 
+data:
+  myconfig.conf: |
+    127.0.0.1	localhost
+    127.0.1.1	batcomputer
+
+    # The following lines are desirable for IPv6 capable hosts
+    ::1     ip6-localhost ip6-loopback
+    fe00::0 ip6-localnet
+    ff00::0 ip6-mcastprefix
+    ff02::1 ip6-allnodes
+    ff02::2 ip6-allrouters
+  readme.txt: this is a readonly directory
+
+--- 
+apiVersion: v1 
+kind: PersistentVolumeClaim 
+metadata:
+  name: bggdb-pvc 
+  namespace: bggns 
+spec: 
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: do-block-storage-retain
+
+--- 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bggdb-deploy
+  namespace: bggns
+  labels:
+    app: bgg
+    name: bggdb-deploy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bgg
+      name: bggdb-po
+  template:
+    metadata:
+      name: bggdb-po
+      labels:
+        app: bgg
+        name: bggdb-po
+    spec:
+      volumes:
+      - name: cm-vol 
+        configMap: 
+          name: bgg-cm
+      - name: data-vol
+        persistentVolumeClaim:
+          claimName: bggdb-pvc
+      containers:
+      - name: bggdb-container
+        image: stackupiss/bgg-database:v1
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: bggdb-port
+          containerPort: 3306
+        volumeMounts:
+        - name: cm-vol 
+          mountPath: /opt/tmp
+          readOnly: true
+        - name: data-vol 
+          mountPath: /var/lib/mysql
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bggdb-svc
+  namespace: bggns
+  labels:
+    app: bgg
+    name: bggdb-svc
+spec:
+  type: ClusterIP
+  selector:
+    app: bgg
+    name: bggdb-po
+  ports:
+  - port: 3306
+    targetPort: bggdb-port
