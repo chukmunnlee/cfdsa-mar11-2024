@@ -1,0 +1,8 @@
+apiVersion: v1 
+kind: ConfigMap  
+metadata:
+  name: dov-cm
+  namespace: dovns
+data:
+  INSTANCE_NAME: name from configmap
+  VERSION: abc123

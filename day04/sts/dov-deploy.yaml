@@ -1,0 +1,112 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dovns
+
+---
+apiVersion: v1 
+kind: ConfigMap  
+metadata:
+  name: dov-cm
+  namespace: dovns
+data:
+  INSTANCE_NAME: name from configmap
+
+---
+apiVersion: apps/v1
+kind: Deployment  
+metadata: 
+  name: dov-deploy
+  namespace: dovns 
+  labels:
+    app: dov
+    name: dov-deploy
+spec: 
+  replicas: 2
+  selector: 
+    matchLabels:
+      app: dov 
+      name: dov-po 
+  template: 
+    metadata:
+      name: dov-po 
+      labels:
+        app: dov 
+        name: dov-po 
+    spec:
+      containers: 
+      - name: dov-container
+        image: chukmunnlee/dov-bear:v5 
+        imagePullPolicy: IfNotPresent
+        env: # environment variables
+        - name: INSTANCE_HASH 
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        envFrom:
+        - configMapRef:
+            name: dov-cm
+        ports:
+        - name: web-port 
+          containerPort: 3000
+        - name: metrics-port 
+          containerPort: 3100
+        livenessProbe:
+          httpGet:
+            path: /healthz 
+            port: web-port
+          periodSeconds: 30
+          initialDelaySeconds: 5
+        resources:
+          requests:
+            cpu: 32m
+            memory: 64Mi
+          limits:
+            cpu: 32m
+            memory: 64Mi
+
+--- 
+apiVersion: v1 
+kind: Service 
+metadata: 
+  name: dov-svc 
+  namespace: dovns 
+  labels:
+    app: dov
+    name: dov-svc 
+spec:
+  type: ClusterIP
+  selector:
+    app: dov 
+    name: dov-po
+  ports:
+  - name: svc-web-port 
+    port: 5000
+    targetPort: web-port
+  - name: svc-metrics-port 
+    port: 5100
+    targetPort: metrics-port
+
+--- 
+apiVersion: v1 
+kind: Service 
+metadata: 
+  name: dov-hsvc 
+  namespace: dovns 
+  labels:
+    app: dov
+    name: dov-hsvc 
+spec:
+  clusterIP: None
+  selector:
+    app: dov 
+    name: dov-po
+  ports:
+  - name: svc-web-port 
+    port: 5000
+    targetPort: web-port
+  - name: svc-metrics-port 
+    port: 5100
+    targetPort: metrics-port
+

@@ -1,0 +1,3 @@
+- op: "replace"
+  path: /spec/rules/0/host
+  value: kustomize-139.59.223.166.nip.io
